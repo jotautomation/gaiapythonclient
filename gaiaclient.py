@@ -1,24 +1,52 @@
-'''Client for connection with Gaia machines'''
+'''Client for connecting with Gaia machines'''
 import requests
 
 
-class GaiaClient(object):
-    """docstring for Client"""
+class Client(object):
+    '''Client for connecting with Gaia machines'''
 
     def __init__(self, address):
 
-        self.applications = {}
+        self._applications = {}
         self.address = address
         # Get applications
         applications_json = requests.get(self.address + '/api/applications').json()
         entities = self._get_entities(applications_json)
 
         for entity in entities:
-            self.applications[entity['properties']['name']] = self._get_actions(entity)
+            self._applications[entity['properties']['name']] = {
+                'actions': self._get_actions(entity),
+                'properties': entity['properties'],
+            }
 
+        root_json = requests.get(self.address + '/api').json()
+
+        self.state_triggers = self._get_actions(root_json)
+
+    @property
     def state(self):
         '''Returns state of gaia machine'''
         return requests.get(self.address + '/api').json()['properties']['state']
+
+    @property
+    def applications(self):
+        '''Returns all available applications'''
+        return self._applications
+
+    @property
+    def ready_for_testing(self):
+        '''Returns true if test box is fully available for all tests'''
+
+        return 'Executing' in self.state
+
+    @property
+    def test_box_closing(self):
+        '''Returns true if test box is test box is closing
+
+        When test box is closing some tests may be executed. Note that
+        on this case test box is not RF or audio shielded. Also because
+        of safety reasons robot is not powered'''
+        return 'Active_ClosingTestBox' in self.state
 
     def _get_entities(self, json):
         '''Fetch entities from Siren entry'''
@@ -62,26 +90,14 @@ class GaiaClient(object):
             return post_func
 
         else:
+
             def get_func():
                 '''Get function'''
-                request = requests.get(url=action['href'], headers={'Content-type': action['type']})
+                request = requests.get(
+                    url=action['href'], headers={'Content-type': action['type']}
+                )
                 # TODO: Handle error nicely
                 request.raise_for_status()
                 return request
 
             return get_func
-
-
-
-'''
-g = GaiaClient("http://192.168.133.130:1234")
-
-# This is how output is set
-g.applications['SlideLockCtrl_OUT']['set-ON']()
-
-# and this is stateful application
-g.applications['BatteryConnector']['set-Work']()
-
-# Robot tool change
-g.applications['MainRobot']['changeTo-FingerBase']()
-'''
