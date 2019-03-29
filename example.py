@@ -4,7 +4,7 @@ import gaiaclient
 client = gaiaclient.Client('localhost:1234')
 
 # Get state of the tester
-print("State: " + client.State)
+print("State: " + client.state)
 
 # This is how you get properties of application.
 # For example here we get current position of X-axle of main robot.
