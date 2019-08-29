@@ -2,7 +2,7 @@
 import requests
 
 
-class Client(object):
+class Client():
     '''Client for connecting with Gaia machines'''
 
     def __init__(self, address):
