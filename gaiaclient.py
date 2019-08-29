@@ -14,10 +14,17 @@ class Client():
         entities = self._get_entities(applications_json)
 
         for entity in entities:
-            self._applications[entity['properties']['name']] = {
-                'actions': self._get_actions(entity),
-                'properties': entity['properties'],
-            }
+            if entity['properties']['name'] in self._applications:
+                if entity['properties']['alias']:
+                    self._applications[entity['properties']['alias']] = {
+                        'actions': self._get_actions(entity),
+                        'properties': entity['properties'],
+                    }
+            else:
+                self._applications[entity['properties']['name']] = {
+                    'actions': self._get_actions(entity),
+                    'properties': entity['properties'],
+                }
 
         root_json = requests.get(self.address + '/api').json()
 
@@ -59,8 +66,11 @@ class Client():
     def _get_actions(self, entity):
 
         actions = {}
+        try:
+            entity_details = requests.get(entity['href']).json()
+        except Exception as e:
+            print(entity)
 
-        entity_details = requests.get(entity['href']).json()
 
         for action in entity_details['actions']:
             actions[action['name']] = self._get_fields(action)
