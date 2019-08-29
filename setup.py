@@ -5,7 +5,8 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="gaiaclient",
-    version="0.0.10",
+    version="0.0.11",
+    license='MIT License',
     author="JOT Automation Ltd.",
     author_email="rami.rahikkala@jotautomation.com",
     description="Client for JOT Automation gaia machines",
