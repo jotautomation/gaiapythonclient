@@ -1,5 +1,16 @@
 import setuptools
 
+'''
+IMPORTANT!
+Use python 2 to run setuptools. Otherwise this will end up as an package
+at PyPi and want it to be a module.
+
+Commands to publish
+python setup.py sdist bdist_wheel
+twine upload dist/*
+
+'''
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
