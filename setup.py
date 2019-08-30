@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="gaiaclient",
-    version="0.0.11",
+    version="0.0.15",
     license='MIT License',
     author="JOT Automation Ltd.",
     author_email="rami.rahikkala@jotautomation.com",
@@ -13,7 +13,6 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/jotautomation/gaiapythonclient",
-    packages=[],
     py_modules=['gaiaclient'],
     install_requires=['requests'],
     classifiers=[
