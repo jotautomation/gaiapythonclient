@@ -16,11 +16,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="gaiaclient",
-<<<<<<< HEAD
-    version="0.0.20",
-=======
-    version="0.0.18",
->>>>>>> parent of 123f506... Add authentication
+    version="0.0.21",
     license='MIT License',
     author="JOT Automation Ltd.",
     author_email="rami.rahikkala@jotautomation.com",
