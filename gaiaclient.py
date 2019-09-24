@@ -2,7 +2,7 @@
 import requests
 
 
-class GaiaClient(object):
+class Client(object):
     """docstring for Client"""
 
     def __init__(self, address, user=None, pwd=None):
