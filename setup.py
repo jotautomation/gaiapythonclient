@@ -3,7 +3,7 @@ import setuptools
 '''
 IMPORTANT!
 Use python 2 to run setuptools. Otherwise this will end up as an package
-at PyPi and want it to be a module.
+at PyPi and we want it to be a module.
 
 Commands to publish
 python setup.py sdist bdist_wheel
@@ -16,7 +16,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="gaiaclient",
-    version="0.0.19",
+    version="0.0.20",
     license='MIT License',
     author="JOT Automation Ltd.",
     author_email="rami.rahikkala@jotautomation.com",
