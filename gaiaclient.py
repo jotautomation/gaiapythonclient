@@ -93,12 +93,17 @@ class Client():
     def _get_fields(self, action):
         if action['method'] == 'POST':
 
-            def post_func():
+            def post_func(**kwargs):
                 '''Post function'''
+
+                # Fields thats value is defined in API. "Static" fields.
                 fields = {}
                 for field in action['fields']:
                     if 'value' in field:
                         fields[field['name']] = field['value']
+
+                # User defined fields. "Variable" fields
+                fields.update(kwargs)
                 request = self.requests.post(
                     json=fields, url=action['href'], headers={'Content-type': action['type']}
                 )
