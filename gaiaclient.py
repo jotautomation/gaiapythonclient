@@ -84,8 +84,6 @@ class Client():
             actions[action['name']] = self._get_fields(action)
         # Add also blocked actions
         if 'blocked_actions' in entity_details:
-            import pdb; pdb.set_trace()
-
             for action in entity_details['blocked_actions']:
                 actions[action['name']] = self._get_fields(action)
 
