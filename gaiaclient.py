@@ -52,7 +52,7 @@ class Client():
     def ready_for_testing(self):
         '''Returns true if test box is fully available for all tests'''
 
-        return 'Executing' in self.state
+        return 'Ready' in self.state
 
     @property
     def test_box_closing(self):
@@ -61,7 +61,7 @@ class Client():
         When test box is closing some tests may be executed. Note that
         on this case test box is not RF or audio shielded. Also because
         of safety reasons robot is not powered'''
-        return 'Active_ClosingTestBox' in self.state
+        return 'Closing' in self.state
 
     def _get_entities(self, json):
         '''Fetch entities from Siren entry'''
