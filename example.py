@@ -8,7 +8,20 @@ print("State: " + client.state)
 
 # This is how you get properties of application.
 # For example here we get current position of X-axle of main robot.
-print(client.applications["mainrobot"].properties["position"]["x"])
+print(client.applications['MainRobot']['properties']['position']['x'])
+
+
+## Print available applications and actions
+class GaiaJsonEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if callable(obj):
+            return obj.__name__
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)
+
+print(json.dumps(client.applications, indent=4, sort_keys=True, cls=GaiaJsonEncoder))
+print(json.dumps(client.state_triggers, indent=4, sort_keys=True, cls=GaiaJsonEncoder))
+
 
 while True:
     # From here starts the actual test sequence
