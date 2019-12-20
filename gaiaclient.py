@@ -44,6 +44,11 @@ class Client():
         return self.requests.get(self.address + '/api').json()['properties']['state']
 
     @property
+    def properties(self):
+        '''Returns properties of gaia machine'''
+        return self.requests.get(self.address + '/api').json()['properties']
+
+    @property
     def applications(self):
         '''Returns all available applications'''
         return self._applications
