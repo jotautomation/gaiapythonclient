@@ -1,11 +1,22 @@
 '''Client for connecting with Gaia machines'''
+import threading
+import json
 import requests
+import websocket
 
 
-class Client():
+class Client:
     '''Client for connecting with Gaia machines'''
 
-    def __init__(self, address, user=None, pwd=None):
+    def __init__(
+            self,
+            address,
+            user=None,
+            pwd=None,
+            machine_state_callback=None,
+            wait_ready_event=None,
+            wait_closing_event=None,
+    ):
 
         if user and pwd:
             self.requests = requests.Session()
@@ -15,8 +26,43 @@ class Client():
         else:
             self.requests = requests
 
+        def on_error(ws, error):
+            '''Handle error'''
+            print(error)
+
+        def on_message(ws, message):
+            '''Handle state change messages'''
+            try:
+                message = json.loads(message)
+                if machine_state_callback:
+                    machine_state_callback(message)
+
+                if wait_ready_event:
+                    if message['state'] == 'Ready':
+                        wait_ready_event.set()
+                    else:
+                        wait_ready_event.clear()
+
+                if wait_closing_event:
+                    if message['state'] == 'Closing' or message['state'] == 'Ready':
+                        wait_closing_event.set()
+                    else:
+                        wait_closing_event.clear()
+
+            except Exception as e:
+                print(e)
+
+        state_socket = websocket.WebSocketApp(
+            "ws://" + address.strip("http://") + "/websocket/state", on_message=on_message
+        )
+
+        state_socket_thread = threading.Thread(target=state_socket.run_forever)
+        state_socket_thread.setDaemon(True)
+        state_socket_thread.start()
+
         self._applications = {}
         self.address = address
+
         # Get applications
         applications_json = self.requests.get(self.address + '/api/applications').json()
         entities = self._get_entities(applications_json)
@@ -83,7 +129,6 @@ class Client():
             entity_details = self.requests.get(entity['href']).json()
         except Exception as e:
             print(entity)
-
 
         for action in entity_details['actions']:
             actions[action['name']] = self._get_fields(action)
