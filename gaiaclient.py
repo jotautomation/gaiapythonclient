@@ -16,6 +16,7 @@ class Client:
             machine_state_callback=None,
             wait_ready_event=None,
             wait_closing_event=None,
+            wait_not_ready_event=None
     ):
 
         if user and pwd:
@@ -42,6 +43,12 @@ class Client:
                         wait_ready_event.set()
                     else:
                         wait_ready_event.clear()
+
+                if wait_not_ready_event:
+                    if message['state'] == 'Ready':
+                        wait_not_ready_event.clear()
+                    else:
+                        wait_not_ready_event.set()
 
                 if wait_closing_event:
                     if message['state'] == 'Closing' or message['state'] == 'Ready':

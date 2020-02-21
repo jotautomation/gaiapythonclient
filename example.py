@@ -9,12 +9,16 @@ CLOSING_WAITER = threading.Event()
 # Threading event for waiting that the test box is ready for testing
 READY_WAITER = threading.Event()
 
+# Threading event for waiting that the test box is not ready for testing
+NOT_READY_WAITER = threading.Event()
+
 CLIENT = gaiaclient.Client(
     'http://localhost:1234',
     # Callback for state changes
     # machine_state_callback=print,
     wait_ready_event=READY_WAITER,
-    wait_closing_event=CLOSING_WAITER
+    wait_closing_event=CLOSING_WAITER,
+    wait_not_ready_event=NOT_READY_WAITER
 )
 
 # Get state of the tester
@@ -39,6 +43,13 @@ print(json.dumps(CLIENT.applications, indent=4, sort_keys=True, cls=GaiaJsonEnco
 print(json.dumps(CLIENT.state_triggers, indent=4, sort_keys=True, cls=GaiaJsonEncoder))
 
 
+def print_with_timestamp(msg):
+    from datetime import datetime
+    now = datetime.now()
+    now = now.strftime("%H:%M:%S")
+    print(now + ": " + msg)
+
+
 while True:
     # From here starts the actual test sequence
 
@@ -54,13 +65,13 @@ while True:
     # Optionally wait the test box closing
     CLOSING_WAITER.wait()  # <-- Optional
 
-    print("Test box closing!")
+    print_with_timestamp("Test box closing!")
 
     # Wait that the test box is fully closed and ready for testing
     READY_WAITER.wait()
 
     # Step 3: Test box is fully closed and we are ready for actual testing.
-    print("Ready for testing!")
+    print_with_timestamp("Ready for testing!")
 
     # Execute the tests. Here's some examples.
 
@@ -87,7 +98,11 @@ while True:
 
     # Step 4: Testing is ready and we release the DUT and give test result so that test box can indicate it to operator
     CLIENT.state_triggers["ReleasePass"]()
+    # The test box must be not ready after the release
+    # If we don't wait here we might start the new sequence before last one is even ended
+    NOT_READY_WAITER.wait()
+    print_with_timestamp("Test box not ready!")
 
     # Fake operator action. Take DUT out.
-    time.sleep(7)  # <-- DO NOT USE ON PRODUCTION!
+    time.sleep(2)  # <-- DO NOT USE ON PRODUCTION!
     CLIENT.applications['dut']['actions']['force-presence-off']()  # <-- DO NOT USE ON PRODUCTION!
