@@ -14,10 +14,16 @@ class Client:
             user=None,
             pwd=None,
             machine_state_callback=None,
-            wait_ready_event=None,
-            wait_closing_event=None,
-            wait_not_ready_event=None
     ):
+
+        # Threading event for waiting that the test box is started to close
+        self.wait_closing_event = threading.Event()
+
+        # Threading event for waiting that the test box is ready for testing
+        self.wait_ready_event = threading.Event()
+
+        # Threading event for waiting that the test box is not ready for testing
+        self.wait_not_ready_event = threading.Event()
 
         if user and pwd:
             self.requests = requests.Session()
@@ -38,23 +44,17 @@ class Client:
                 if machine_state_callback:
                     machine_state_callback(message)
 
-                if wait_ready_event:
-                    if message['state'] == 'Ready':
-                        wait_ready_event.set()
-                    else:
-                        wait_ready_event.clear()
+                if message['state'] == 'Ready':
+                    self.wait_ready_event.set()
+                    self.wait_not_ready_event.clear()
+                else:
+                    self.wait_ready_event.clear()
+                    self.wait_not_ready_event.set()
 
-                if wait_not_ready_event:
-                    if message['state'] == 'Ready':
-                        wait_not_ready_event.clear()
-                    else:
-                        wait_not_ready_event.set()
-
-                if wait_closing_event:
-                    if message['state'] == 'Closing' or message['state'] == 'Ready':
-                        wait_closing_event.set()
-                    else:
-                        wait_closing_event.clear()
+                if message['state'] == 'Closing' or message['state'] == 'Ready':
+                    self.wait_closing_event.set()
+                else:
+                    self.wait_closing_event.clear()
 
             except Exception as e:
                 print(e)
@@ -120,6 +120,21 @@ class Client:
         on this case test box is not RF or audio shielded. Also because
         of safety reasons robot is not powered'''
         return 'Closing' in self.state
+
+    def wait_ready(self, timeout=None):
+        """Waits that the tester is ready and available for all tests.
+        Timeout on seconds. Returns True if there was no timeout."""
+        return self.wait_ready_event.wait(timeout)
+
+    def wait_closing(self, timeout=None):
+        """Waits that the tester is closing.
+        Timeout on seconds. Returns True if there was no timeout."""
+        return self.wait_closing_event.wait(timeout)
+
+    def wait_not_ready(self, timeout=None):
+        """Waits that the tester is not ready.
+        Timeout on seconds. Returns True if there was no timeout."""
+        return self.wait_not_ready_event.wait(timeout)
 
     def _get_entities(self, json):
         '''Fetch entities from Siren entry'''

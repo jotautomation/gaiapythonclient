@@ -3,14 +3,7 @@ import json
 import threading
 import gaiaclient
 
-# Threading event for waiting that the test box is started to close
-CLOSING_WAITER = threading.Event()
 
-# Threading event for waiting that the test box is ready for testing
-READY_WAITER = threading.Event()
-
-# Threading event for waiting that the test box is not ready for testing
-NOT_READY_WAITER = threading.Event()
 
 CLIENT = gaiaclient.Client(
     'http://localhost:1234',
@@ -63,12 +56,12 @@ while True:
     # not audio or RF shielded and robot actions are not allowed
 
     # Optionally wait the test box closing
-    CLOSING_WAITER.wait()  # <-- Optional
+    CLIENT.wait_closing()  # <-- Optional
 
     print_with_timestamp("Test box closing!")
 
     # Wait that the test box is fully closed and ready for testing
-    READY_WAITER.wait()
+    CLIENT.wait_ready()
 
     # Step 3: Test box is fully closed and we are ready for actual testing.
     print_with_timestamp("Ready for testing!")
@@ -100,7 +93,7 @@ while True:
     CLIENT.state_triggers["ReleasePass"]()
     # The test box must be not ready after the release
     # If we don't wait here we might start the new sequence before last one is even ended
-    NOT_READY_WAITER.wait()
+    CLIENT.wait_not_ready()
     print_with_timestamp("Test box not ready!")
 
     # Fake operator action. Take DUT out.
