@@ -1,17 +1,11 @@
 import time
 import json
-import threading
 import gaiaclient
-
-
 
 CLIENT = gaiaclient.Client(
     'http://localhost:1234',
     # Callback for state changes
     # machine_state_callback=print,
-    wait_ready_event=READY_WAITER,
-    wait_closing_event=CLOSING_WAITER,
-    wait_not_ready_event=NOT_READY_WAITER
 )
 
 # Get state of the tester
