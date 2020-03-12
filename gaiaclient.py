@@ -42,22 +42,21 @@ class Client:
         def on_message(ws, message):
             '''Handle state change messages'''
             try:
-                with self.state_lock:
-                    message = json.loads(message)
-                    if machine_state_callback:
-                        machine_state_callback(message)
+                message = json.loads(message)
+                if machine_state_callback:
+                    machine_state_callback(message)
 
-                    if message['state'] == 'Ready':
-                        self.wait_ready_event.set()
-                        self.wait_not_ready_event.clear()
-                    else:
-                        self.wait_ready_event.clear()
-                        self.wait_not_ready_event.set()
+                if message['state'] == 'Ready':
+                    self.wait_ready_event.set()
+                    self.wait_not_ready_event.clear()
+                else:
+                    self.wait_ready_event.clear()
+                    self.wait_not_ready_event.set()
 
-                    if message['state'] == 'Closing' or message['state'] == 'Ready':
-                        self.wait_closing_event.set()
-                    else:
-                        self.wait_closing_event.clear()
+                if message['state'] == 'Closing' or message['state'] == 'Ready':
+                    self.wait_closing_event.set()
+                else:
+                    self.wait_closing_event.clear()
 
             except Exception as e:
                 print(e)
@@ -128,31 +127,28 @@ class Client:
         """Waits that the tester is ready and available for all tests.
         Timeout on seconds. Returns True if there was no timeout."""
 
-        with self.state_lock:
-            if self.ready_for_testing:
-                return True
+        if self.ready_for_testing:
+            return True
 
-            return self.wait_ready_event.wait(timeout)
+        return self.wait_ready_event.wait(timeout)
 
     def wait_closing(self, timeout=None):
         """Waits that the tester is closing.
         Timeout on seconds. Returns True if there was no timeout."""
 
-        with self.state_lock:
-            if self.test_box_closing:
-                return True
+        if self.test_box_closing:
+            return True
 
-            return self.wait_closing_event.wait(timeout)
+        return self.wait_closing_event.wait(timeout)
 
     def wait_not_ready(self, timeout=None):
         """Waits that the tester is not ready.
         Timeout on seconds. Returns True if there was no timeout."""
 
-        with self.state_lock:
-            if not self.ready_for_testing:
-                return True
+        if not self.ready_for_testing:
+            return True
 
-            return self.wait_not_ready_event.wait(timeout)
+        return self.wait_not_ready_event.wait(timeout)
 
     def _get_entities(self, json):
         '''Fetch entities from Siren entry'''
