@@ -25,8 +25,6 @@ class Client:
         # Threading event for waiting that the test box is not ready for testing
         self.wait_not_ready_event = threading.Event()
 
-        self.state_lock = threading.RLock()
-
         if user and pwd:
             self.requests = requests.Session()
 
