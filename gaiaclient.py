@@ -113,7 +113,7 @@ class Client:
     def ready_for_testing(self):
         '''Returns true if test box is fully available for all tests'''
 
-        return 'Ready' in self.state
+        return self.state == 'Ready'
 
     @property
     def test_box_closing(self):
@@ -122,7 +122,7 @@ class Client:
         When test box is closing some tests may be executed. Note that
         on this case test box is not RF or audio shielded. Also because
         of safety reasons robot is not powered'''
-        return 'Closing' in self.state
+        return self.state == 'Closing'
 
     def wait_ready(self, timeout=None):
         """Waits that the tester is ready and available for all tests.
