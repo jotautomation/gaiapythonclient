@@ -16,6 +16,11 @@ class Client:
             machine_state_callback=None,
     ):
 
+        def prependurl(url):
+            return url if "://" in url else "http://" + url
+
+        address = prependurl(address)
+
         # Threading event for waiting that the test box is started to close
         self.wait_closing_event = threading.Event()
 
