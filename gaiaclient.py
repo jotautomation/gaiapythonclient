@@ -8,18 +8,14 @@ import websocket
 class Client:
     '''Client for connecting with Gaia machines'''
 
-    def __init__(
-            self,
-            address,
-            user=None,
-            pwd=None,
-            machine_state_callback=None,
-    ):
-
+    def __init__(self, address, user=None, pwd=None, machine_state_callback=None):
         def prependurl(url):
             return url if "://" in url else "http://" + url
 
         address = prependurl(address)
+
+        self.app_wait_list = []
+        self.app_wait_list_lock = threading.Lock()
 
         # Threading event for waiting that the test box is started to close
         self.wait_closing_event = threading.Event()
@@ -42,7 +38,7 @@ class Client:
             '''Handle error'''
             print(error)
 
-        def on_message(ws, message):
+        def on_status_message(ws, message):
             '''Handle state change messages'''
             try:
                 message = json.loads(message)
@@ -65,7 +61,38 @@ class Client:
                 print(e)
 
         state_socket = websocket.WebSocketApp(
-            "ws://" + address.strip("http://") + "/websocket/state", on_message=on_message
+            "ws://" + address.strip("http://") + "/websocket/state", on_message=on_status_message
+        )
+
+        state_socket_thread = threading.Thread(target=state_socket.run_forever)
+        state_socket_thread.setDaemon(True)
+        state_socket_thread.start()
+
+        def on_app_message(ws, message):
+            '''Handle application state change messages'''
+            try:
+                print(message)
+                message = json.loads(message)
+
+                with self.app_wait_list_lock:
+                    remove_these = []
+                    for app in self.app_wait_list:
+                        if app['name'] == message['name'] and app['state'] == message['value']:
+                            app['wait_event'].set()
+                            remove_these.append(app)
+
+                    for item in remove_these:
+                        self.app_wait_list.remove(item)
+
+            except Exception as e:
+                import logging
+                logging.basicConfig(level=logging.DEBUG)
+                logger = logging.getLogger(__name__)
+                logger.exception(e)
+
+        state_socket = websocket.WebSocketApp(
+            "ws://" + address.strip("http://") + "/websocket/applications",
+            on_message=on_app_message,
         )
 
         state_socket_thread = threading.Thread(target=state_socket.run_forever)
@@ -125,6 +152,16 @@ class Client:
         on this case test box is not RF or audio shielded. Also because
         of safety reasons robot is not powered'''
         return self.state == 'Closing'
+
+    def app_wait_event(self, name, state):
+
+        wait_event = threading.Event()
+
+        with self.app_wait_list_lock:
+            self.app_wait_list.append({'name': name, 'state': state, 'wait_event': wait_event})
+
+        return wait_event
+
 
     def wait_ready(self, timeout=None):
         """Waits that the tester is ready and available for all tests.
