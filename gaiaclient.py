@@ -71,7 +71,6 @@ class Client:
         def on_app_message(ws, message):
             '''Handle application state change messages'''
             try:
-                print(message)
                 message = json.loads(message)
 
                 with self.app_wait_list_lock:
