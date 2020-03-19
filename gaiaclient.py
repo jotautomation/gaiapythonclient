@@ -3,6 +3,7 @@ import threading
 import json
 import requests
 import websocket
+import queue
 
 
 class Client:
@@ -77,6 +78,7 @@ class Client:
                     remove_these = []
                     for app in self.app_wait_list:
                         if app['name'] == message['name'] and app['state'] == message['value']:
+                            app['resolved_state'].put(message['value'])
                             app['wait_event'].set()
                             remove_these.append(app)
 
@@ -85,6 +87,7 @@ class Client:
 
             except Exception as e:
                 import logging
+
                 logging.basicConfig(level=logging.DEBUG)
                 logger = logging.getLogger(__name__)
                 logger.exception(e)
@@ -152,15 +155,65 @@ class Client:
         of safety reasons robot is not powered'''
         return self.state == 'Closing' or self.ready_for_testing
 
-    def app_wait_event(self, name, state):
+    def app_wait_event(self, name, state, stop_wait_on_error=False):
+        '''Returns thread.event that can be used to wait application state change'''
 
         wait_event = threading.Event()
 
-        with self.app_wait_list_lock:
-            self.app_wait_list.append({'name': name, 'state': state, 'wait_event': wait_event})
+        states = [state]
+        resolved_state = queue.Queue()
 
-        return wait_event
+        if stop_wait_on_error:
+            states.extend(['error', 'Error', 'ErrorState'])
+        current_state = self.applications[name]['properties']['state']
+        if current_state in states:
+            resolved_state.put(current_state)
+            wait_event.set()
+        else:
+            with self.app_wait_list_lock:
+                self.app_wait_list.append(
+                    {
+                        'name': name,
+                        'state': states,
+                        'wait_event': wait_event,
+                        'resolved_state': resolved_state,
+                    }
+                )
 
+        return wait_event, resolved_state
+
+    def wait_app_state(self, name, state, timeout=None):
+        """Stops execution until the application is on the wanted state.
+
+        Args:
+            name: The name of the application.
+            state: The state that must be reached.
+            timeout: Maximum time to wait. TimeoutError will be raised if timeout
+                   is reached.
+
+        Raises:
+            TimeoutError: The application didn't reach the wanted state within the timeout time.
+            ApplicationError: The application went to error state
+        """
+        wait_event, resolved_state = self.app_wait_event(name, state, True)
+
+        if not wait_event.wait(timeout):
+            raise TimeoutError(
+                "Timeout while waiting for the state '{}' for the application '{}'".format(
+                    state, name
+                )
+            )
+
+        if resolved_state.empty():
+            return
+
+        current_state = resolved_state.get()
+        if current_state != state:
+            raise ApplicationError(
+                "The application '{}' waiting for the state '{}' went to state '{}'".format(
+                    name, state, current_state
+                )
+            )
 
     def wait_ready(self, timeout=None):
         """Waits that the tester is ready and available for all tests.
@@ -248,3 +301,22 @@ class Client:
                 return request
 
             return get_func
+
+
+# define Python user-defined exceptions
+class GaiaError(Exception):
+    """Base class for other exceptions"""
+
+    pass
+
+
+class TimeoutError(GaiaError):
+    """Raised when the input value is too small"""
+
+    pass
+
+
+class ApplicationError(GaiaError):
+    """Raised when the input value is too large"""
+
+    pass
