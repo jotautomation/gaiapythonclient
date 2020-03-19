@@ -150,7 +150,7 @@ class Client:
         When test box is closing some tests may be executed. Note that
         on this case test box is not RF or audio shielded. Also because
         of safety reasons robot is not powered'''
-        return self.state == 'Closing'
+        return self.state == 'Closing' or self.ready_for_testing
 
     def app_wait_event(self, name, state):
 
