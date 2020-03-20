@@ -306,18 +306,18 @@ class Client:
 
 # define Python user-defined exceptions
 class GaiaError(Exception):
-    """Base class for other exceptions"""
+    """Generic Gaia error and base class for other exceptions"""
 
     pass
 
 
 class TimeoutError(GaiaError):
-    """Raised when the input value is too small"""
+    """Raised when timeout occurs"""
 
     pass
 
 
 class ApplicationError(GaiaError):
-    """Raised when the input value is too large"""
+    """Raised when the application is on error state"""
 
     pass
