@@ -77,10 +77,11 @@ class Client:
                 with self.app_wait_list_lock:
                     remove_these = []
                     for app in self.app_wait_list:
-                        if app['name'] == message['name'] and app['state'] == message['value']:
-                            app['resolved_state'].put(message['value'])
-                            app['wait_event'].set()
-                            remove_these.append(app)
+                        if app['name'] == message['name']:
+                            if message['value'] in app['state']:
+                                app['resolved_state'].put(message['value'])
+                                app['wait_event'].set()
+                                remove_these.append(app)
 
                     for item in remove_these:
                         self.app_wait_list.remove(item)
