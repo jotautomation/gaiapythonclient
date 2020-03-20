@@ -60,28 +60,45 @@ while True:
     # Step 3: Test box is fully closed and we are ready for actual testing.
     print_with_timestamp("Ready for testing!")
 
-    # Execute the tests. Here's some examples.
+    #### How to run actions for applications ####
 
-    # Run robot movement. See GcodeExample.GCode for g-code example and also how
-    # to define tool on g-code.
-    # Note that for safety reason when g-code is modified it will run once with low speed and power.
-    # So if you made mistake and robot collides it won't brake anything
-    # CLIENT.applications["MainRobot"]['actions']["cnc_run"](plain_text=GcodeExample.GCode)
+    # Let's say you have stateful application called CameraLight that has actions
+    # set-LightOn and set-LightOff. Obviously first sets light on and later set light off.
+    # There is a general way to run any action. For the example application it would go like this:
 
-    # Push button on DUT with pusher
-    # CLIENT.applications["SideButtonPusher"]['actions']["Push"]()
+    # Set light on
+    CLIENT.applications["CameraLight"]['actions']["set-LightOn"]()
 
-    # Optionally wait that pusher is on end position (detected by sensor)
-    # CLIENT.applications["SideButtonPusher"].wait_state("Push")
+    # Set light off
+    CLIENT.applications["CameraLight"]['actions']["set-LightOff"]()
 
-    # Release pusher
-    # CLIENT.applications["SideButtonPusher"]['actions']["Release"]()
+    # The above methods works for any application
+    # If fields need to be set for action, it is done like this:
 
     # Record audio
-    # (Not implemented in python CLIENT - yet!) CLIENT.applications["WaveRecorder"]['actions']["record-wave"](new Dictionary<string, object> { { "time_s", 2 }, { "filename", "testrecord.wav" } });
+    CLIENT.applications["WaveRecorder"]['actions']["record-wave"](time_s=2, filename='testrecord.wav')
 
     # Play audio
-    # (Not implemented in python CLIENT - yet!) CLIENT.Applications["WavePlayer"]['actions']["play-wave"](new Dictionary<string, object> { { "filename", "sine_1000Hz_-3dBFS_3s.wav" } });
+    CLIENT.applications["WavePlayer"]['actions']["play-wave"](filename='sine_1000Hz_-3dBFS_3s.wav')
+
+    #### Waiting application state ####
+
+    # wait_app_state() waits that the application reaches the wanted state
+    CLIENT.wait_app_state('CameraLight', 'LightOn')
+    CLIENT.wait_app_state('WavePlayer', 'Ready')
+
+    #### Convenience methods ####
+
+    # Some times you need to set stateful application state and wait that it is reached.
+    # This is especially case on mechanical movements. Setting and waiting can be done
+    # with single set_app_state() method
+
+    # Set camera light on and wait that it is on
+    CLIENT.set_app_state('CameraLight', 'LightOn')
+
+    # Main robot movements can be also run and waited with single command
+    import example_gcode
+    CLIENT.run_main_robot(example_gcode.GCODE)
 
     # Step 4: Testing is ready and we release the DUT and give test result so that test box can indicate it to operator
     CLIENT.state_triggers["ReleasePass"]()
