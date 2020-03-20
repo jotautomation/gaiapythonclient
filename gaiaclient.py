@@ -287,6 +287,10 @@ class Client:
                 )
                 # TODO: Handle error nicely
                 request.raise_for_status()
+                if response.status_code != 200:
+                    raise GaiaError(response.text)
+
+                response.raise_for_status()
 
             return post_func
 
@@ -294,12 +298,14 @@ class Client:
 
             def get_func():
                 '''Get function'''
-                request = self.requests.get(
+                response = self.requests.get(
                     url=action['href'], headers={'Content-type': action['type']}
                 )
-                # TODO: Handle error nicely
-                request.raise_for_status()
-                return request
+                if response.status_code != 200:
+                    raise GaiaError(response.text)
+
+                response.raise_for_status()
+                return response
 
             return get_func
 
