@@ -156,6 +156,67 @@ class Client:
         of safety reasons robot is not powered'''
         return self.state == 'Closing' or self.ready_for_testing
 
+    def set_app_state(self, name, state, sync=True, timeout=None):
+        """Convenience method to set stateful application state.
+
+        Calls internally application action and waits that the state
+        is reached (if sync arg is true).
+
+        Args:
+            name: The name of the application.
+            state: The state that must be reached.
+            sync: If true, execution stops on this method until the application is
+                on the wanted state, the application goes to the error or timeout
+                is reached.
+            timeout: Maximum time to wait. TimeoutError will be raised if timeout
+                   is reached. Omitted if sync is False.
+
+        Raises:
+            TimeoutError: The application didn't reach the wanted state within the timeout time.
+            ApplicationError: The application went to error state
+        """
+        self.applications[name]['actions']['set-' + state]()
+        if sync:
+            self.wait_app_state(name, state)
+
+    def run_main_robot(self, gcode, sync=True, prerun_timeout=10):
+        """Convenience method to run G-CODE/CNC on main robot.
+
+        Calls internally application action and waits that the ready state
+        is reached (if sync arg is true).
+
+        Args:
+            name: The name of the application.
+            state: The state that must be reached.
+            sync: If true, execution stops on this method until the application is
+                on the wanted state, the application goes to the error or timeout
+                is reached.
+            prerun_timeout: Maximum time to wait for robot to be ready before starting new cnc run.
+                          TimeoutError will be raised if timeout is reached.
+                          Omitted if sync is False.
+
+        Raises:
+            TimeoutError: The application didn't reach the wanted state within the timeout time.
+            ApplicationError: The application went to error state
+        """
+
+        # Wait that the robot is ready
+        self.wait_app_state('MainRobot', 'Ready', prerun_timeout)
+
+        # Get wait event for active state
+        active_wait, resolved_state = self.app_wait_event('MainRobot', 'Active_CncMode_Busy', True)
+
+        self.applications["MainRobot"]['actions']["cnc_run"](plain_text=gcode)
+
+        # Wait that the main robot reaches the active state
+        Client._handle_app_state_wait(
+            active_wait, resolved_state, 3, 'Active_CncMode_Busy', 'MainRobot'
+        )
+
+        if sync:
+            # Wait that the cnc run is done
+            self.wait_app_state('MainRobot', 'Ready')
+
     def app_wait_event(self, name, state, stop_wait_on_error=False):
         '''Returns thread.event that can be used to wait application state change'''
 
@@ -197,7 +258,10 @@ class Client:
             ApplicationError: The application went to error state
         """
         wait_event, resolved_state = self.app_wait_event(name, state, True)
+        Client._handle_app_state_wait(wait_event, resolved_state, timeout, state, name)
 
+    @staticmethod
+    def _handle_app_state_wait(wait_event, resolved_state, timeout, state, name):
         if not wait_event.wait(timeout):
             raise TimeoutError(
                 "Timeout while waiting for the state '{}' for the application '{}'".format(
