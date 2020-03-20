@@ -274,19 +274,24 @@ class Client:
             def post_func(**kwargs):
                 '''Post function'''
 
-                # Fields thats value is defined in API. "Static" fields.
-                fields = {}
-                for field in action['fields']:
-                    if 'value' in field:
-                        fields[field['name']] = field['value']
+                if 'plain_text' in kwargs.keys():
+                    response = self.requests.post(
+                        data=kwargs['plain_text'],
+                        url=action['href'],
+                        headers={'Content-type': action['type']},
+                    )
+                else:
+                    # Fields thats value is defined in API. "Static" fields.
+                    fields = {}
+                    for field in action['fields']:
+                        if 'value' in field:
+                            fields[field['name']] = field['value']
 
-                # User defined fields. "Variable" fields
-                fields.update(kwargs)
-                request = self.requests.post(
-                    json=fields, url=action['href'], headers={'Content-type': action['type']}
-                )
-                # TODO: Handle error nicely
-                request.raise_for_status()
+                    # User defined fields. "Variable" fields
+                    fields.update(kwargs)
+                    response = self.requests.post(
+                        json=fields, url=action['href'], headers={'Content-type': action['type']}
+                    )
                 if response.status_code != 200:
                     raise GaiaError(response.text)
 
