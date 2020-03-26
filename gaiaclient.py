@@ -335,7 +335,7 @@ class Client:
     def _get_fields(self, action):
         if action['method'] == 'POST':
 
-            def post_func(**kwargs):
+            def post_func(*args, **kwargs):
                 '''Post function'''
 
                 if 'plain_text' in kwargs.keys():
@@ -345,14 +345,25 @@ class Client:
                         headers={'Content-type': action['type']},
                     )
                 else:
-                    # Fields thats value is defined in API. "Static" fields.
                     fields = {}
+
                     for field in action['fields']:
+                        # Fields thats value is defined in API. For example stateful app states.
                         if 'value' in field:
                             fields[field['name']] = field['value']
+                        # Field name in a key word arg. For example analog output, filename etc.
+                        elif field['name'] in kwargs:
+                            fields[field['name']] = kwargs[field['name']]
 
-                    # User defined fields. "Variable" fields
-                    fields.update(kwargs)
+                    # If there's only one field and argument,
+                    # it's safe to assume that they must be paired
+                    if len(action['fields']) == 1 == len(args):
+                        fields[action['fields'][0]['name']] = args[0]
+
+                    # Finally, as a last resort, just dump all the arguments in
+                    else:
+                        fields.update(kwargs)
+
                     response = self.requests.post(
                         json=fields, url=action['href'], headers={'Content-type': action['type']}
                     )
