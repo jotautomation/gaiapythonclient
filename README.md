@@ -1,8 +1,21 @@
-# JOT Gaia API quick start
+# Gaia Python Client
+
+This project introduces thin client for JOT Gaia HTTP API written on python. See API description bellow. Usage of the client is described on example.py.
+
+## Installation
+
+Preferred way to install is to use pip ```pip install gaiaclient```
+
+# JOT Gaia HTTP API quick start
+
+## Gaia Machines
+
+- [G5](https://github.com/jotautomation/G5-Test-Sequencer-Docs)
+- [M Box](https://github.com/jotautomation/M-Box-Test-Sequencer-Docs)
 
 ## What it is?
 
-Low-ceremony, simple and self-assisting RestFul API for controlling JOT Automation Gaia platform testers.
+Low-ceremony, simple and self-assisting HATEOAS RestFul API for controlling JOT Automation Gaia platform testers.
 
 ### Browse the API
 
