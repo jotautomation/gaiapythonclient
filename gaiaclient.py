@@ -149,12 +149,39 @@ class Client:
 
     @property
     def test_box_closing(self):
-        '''Returns true if test box is test box is closing
+        """Returns true if test box is test box is closing
 
         When test box is closing some tests may be executed. Note that
         on this case test box is not RF or audio shielded. Also because
-        of safety reasons robot is not powered'''
+        of safety reasons robot is not powered"""
         return self.state == 'Closing' or self.ready_for_testing
+
+    def upload_wave_file(self, file_name):
+        """Uploads a wave file to gaia machine to be played later.
+
+        Args:
+            file_name: The name of the file to send to the gaia machine.
+
+        """
+
+        files = {'file': open(file_name, 'rb')}
+        requests.post(self.address + '/api/waves', files=files)
+
+    def download_wave_file(self, file_name, local_file_name=None):
+        """Downloads the recorded file from the test box.
+
+        Args:
+            file_name: The name of the file on gaia machine.
+            local_file_name: If defined, stores the downloaded file to your local machine.
+
+        Returns:
+            Content of the downloaded file."""
+
+        resp = self.requests.get(self.address + '/api/waves/' + file_name)
+        if local_file_name:
+            open(local_file_name, 'wb').write(resp.content)
+
+        return resp.content
 
     def set_app_state(self, name, state, sync=True, timeout=None):
         """Convenience method to set stateful application state.
