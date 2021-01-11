@@ -11,10 +11,14 @@ CLIENT = gaiaclient.Client(
 # Get state of the tester
 print("State: " + CLIENT.state)
 
+# This is how you can download the recorded wave file from gaia machine.
+CLIENT.download_wave_file('sine_1000Hz_-3dBFS_3s.wav', 'sine_1000Hz_-3dBFS_3s.wav')
 # This is how you get properties of application.
 # For example here we get current position of X-axle of main robot.
 print(CLIENT.applications['MainRobot']['properties']['position']['x'])
 
+# And this is how file is uploaded. The file can be later played on the machine.
+CLIENT.upload_wave_file('sine_1000Hz_-3dBFS_3s.wav')
 
 # Print available applications and actions
 class GaiaJsonEncoder(json.JSONEncoder):
