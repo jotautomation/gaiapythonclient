@@ -231,13 +231,13 @@ class Client:
         self.wait_app_state('MainRobot', 'Ready', prerun_timeout)
 
         # Get wait event for active state
-        active_wait, resolved_state = self.app_wait_event('MainRobot', 'Active_CncMode_Busy', True)
+        active_wait, resolved_state = self.app_wait_event('MainRobot', 'Busy', True)
 
         self.applications["MainRobot"]['actions']["cnc_run"](plain_text=gcode)
 
         # Wait that the main robot reaches the active state
         Client._handle_app_state_wait(
-            active_wait, resolved_state, 3, 'Active_CncMode_Busy', 'MainRobot'
+            active_wait, resolved_state, 3, 'Busy', 'MainRobot'
         )
 
         if sync:
