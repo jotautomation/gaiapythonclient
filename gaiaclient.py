@@ -114,12 +114,12 @@ class Client:
                 if entity['properties']['alias']:
                     self._applications[entity['properties']['alias']] = {
                         'actions': self._get_actions(entity),
-                        'properties': entity['properties'],
+                        'properties': self._get_properties(entity),
                     }
             else:
                 self._applications[entity['properties']['name']] = {
                     'actions': self._get_actions(entity),
-                    'properties': entity['properties'],
+                    'properties': self._get_properties(entity),
                 }
 
         root_json = self.requests.get(self.address + '/api').json()
@@ -236,9 +236,7 @@ class Client:
         self.applications["MainRobot"]['actions']["cnc_run"](plain_text=gcode)
 
         # Wait that the main robot reaches the active state
-        Client._handle_app_state_wait(
-            active_wait, resolved_state, 3, 'Busy', 'MainRobot'
-        )
+        Client._handle_app_state_wait(active_wait, resolved_state, 3, 'Busy', 'MainRobot')
 
         if sync:
             # Wait that the cnc run is done
@@ -254,7 +252,7 @@ class Client:
 
         if stop_wait_on_error:
             states.extend(['error', 'Error', 'ErrorState'])
-        current_state = self.applications[name]['properties']['state']
+        current_state = self.applications[name]['properties']()['state']
         if current_state in states:
             resolved_state.put(current_state)
             wait_event.set()
@@ -341,6 +339,12 @@ class Client:
         for i in json['entities']:
             entities.append(i)
         return entities
+
+    def _get_properties(self, entity):
+        def properties_func():
+            return self.requests.get(entity['href']).json()['properties']
+
+        return properties_func
 
     def _get_actions(self, entity):
 
