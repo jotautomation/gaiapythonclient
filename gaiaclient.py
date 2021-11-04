@@ -364,6 +364,8 @@ class Client:
         return actions
 
     def _get_fields(self, action):
+        action['href'] = action['href'].replace('http:///', self.address + '/')
+
         if action['method'] == 'POST':
 
             def post_func(*args, **kwargs):
