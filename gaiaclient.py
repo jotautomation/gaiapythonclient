@@ -80,8 +80,11 @@ class Client:
                         if app['name'] == message['name']:
                             if message['value'] in app['state']:
                                 app['resolved_state'].put(message['value'])
-                                app['wait_event'].set()
-                                remove_these.append(app)
+                                if app['callback']:
+                                    app['callback'](message)
+                                else:
+                                    app['wait_event'].set()
+                                    remove_these.append(app)
 
                     for item in remove_these:
                         self.app_wait_list.remove(item)
@@ -284,6 +287,21 @@ class Client:
         """
         wait_event, resolved_state = self.app_wait_event(name, state, True)
         Client._handle_app_state_wait(wait_event, resolved_state, timeout, state, name)
+
+    def set_app_callback(self, name, state, callback):
+        '''Set callback for application state change'''
+        resolved_state = queue.Queue()
+        resolved_state.put(state)
+        states = [state]
+        with self.app_wait_list_lock:
+            self.app_wait_list.append(
+                {
+                    'name': name,
+                    'state': states,
+                    'resolved_state': resolved_state,
+                    'callback': callback,
+                }
+            )
 
     @staticmethod
     def _handle_app_state_wait(wait_event, resolved_state, timeout, state, name):
