@@ -266,6 +266,7 @@ class Client:
                         'name': name,
                         'state': states,
                         'wait_event': wait_event,
+                        'callback': None,
                         'resolved_state': resolved_state,
                     }
                 )
