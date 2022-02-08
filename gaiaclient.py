@@ -140,6 +140,11 @@ class Client:
         return self.requests.get(self.address + '/api').json()['properties']
 
     @property
+    def duts(self):
+        '''Returns list of active DUTs'''
+        return self.requests.get(self.address + '/api/duts').json()
+
+    @property
     def applications(self):
         '''Returns all available applications'''
         return self._applications
