@@ -32,6 +32,9 @@ class Client:
 
             self.requests.post(address + "/login", json={"user": user, "password": pwd})
 
+            if not self.requests.cookies:
+                raise Exception("Did not receive user level cookies")
+
         else:
             self.requests = requests
 
