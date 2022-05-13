@@ -13,7 +13,7 @@ class Client:
         def prependurl(url):
             return url if "://" in url else "http://" + url
 
-        address = prependurl(address)
+        address = prependurl(address).lower()
 
         self.app_wait_list = []
         self.app_wait_list_lock = threading.Lock()
