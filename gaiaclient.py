@@ -1,6 +1,7 @@
 '''Client for connecting with Gaia machines'''
 import threading
 import json
+import time
 import requests
 import websocket
 import queue
@@ -9,7 +10,19 @@ import queue
 class Client:
     '''Client for connecting with Gaia machines'''
 
-    def __init__(self, address, user=None, pwd=None, machine_state_callback=None):
+    def __init__(
+        self,
+        address,
+        user=None,
+        pwd=None,
+        machine_state_callback=None,
+        reconnect_ws=True,
+        reconnect_ws_delay=10,
+    ):
+        self.reconnect_ws = reconnect_ws
+        self.reconnect_ws_delay = reconnect_ws_delay
+        self.ws_kwargs = {"ping_interval": 30, "ping_timeout": 10}
+
         def prependurl(url):
             return url if "://" in url else "http://" + url
 
@@ -33,7 +46,7 @@ class Client:
             self.requests.post(address + "/login", json={"user": user, "password": pwd})
 
             if not self.requests.cookies:
-                raise Exception("Did not receive user level cookies")
+                raise GaiaError("Did not receive user level cookies")
 
         else:
             self.requests = requests
@@ -41,6 +54,20 @@ class Client:
         def on_error(ws, error):
             '''Handle error'''
             print(error)
+
+        def on_close(ws, status, msg):
+            if self.reconnect_ws:
+                time.sleep(self.reconnect_ws_delay)
+                connect_ws(ws.url, ws.on_message)
+
+        def connect_ws(url, on_message):
+            ws_socket = websocket.WebSocketApp(
+                url, on_message=on_message, on_close=on_close
+            )
+
+            ws_socket_thread = threading.Thread(target=ws_socket.run_forever, kwargs=self.ws_kwargs)
+            ws_socket_thread.setDaemon(True)
+            ws_socket_thread.start()
 
         def on_status_message(ws, message):
             '''Handle state change messages'''
@@ -64,13 +91,7 @@ class Client:
             except Exception as e:
                 print(e)
 
-        state_socket = websocket.WebSocketApp(
-            "ws://" + address.strip("http://") + "/websocket/state", on_message=on_status_message
-        )
-
-        state_socket_thread = threading.Thread(target=state_socket.run_forever)
-        state_socket_thread.setDaemon(True)
-        state_socket_thread.start()
+        connect_ws("ws://" + address.strip("http://") + "/websocket/state", on_status_message)
 
         def on_app_message(ws, message):
             '''Handle application state change messages'''
@@ -99,14 +120,7 @@ class Client:
                 logger = logging.getLogger(__name__)
                 logger.exception(e)
 
-        state_socket = websocket.WebSocketApp(
-            "ws://" + address.strip("http://") + "/websocket/applications",
-            on_message=on_app_message,
-        )
-
-        state_socket_thread = threading.Thread(target=state_socket.run_forever)
-        state_socket_thread.setDaemon(True)
-        state_socket_thread.start()
+        connect_ws("ws://" + address.strip("http://") + "/websocket/applications", on_app_message)
 
         self._applications = {}
         self.address = address
