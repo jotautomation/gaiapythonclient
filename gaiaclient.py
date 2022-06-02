@@ -157,6 +157,11 @@ class Client:
         return self.requests.get(self.address + '/api').json()['properties']
 
     @property
+    def settings(self):
+        '''Returns settings of gaia machine'''
+        return self.requests.get(self.address + '/api/settings').json()
+
+    @property
     def duts(self):
         '''Returns list of active DUTs'''
         return self.requests.get(self.address + '/api/duts').json()
@@ -180,6 +185,16 @@ class Client:
         on this case test box is not RF or audio shielded. Also because
         of safety reasons robot is not powered"""
         return self.state == 'Closing' or self.ready_for_testing
+
+    def upload_settings(self, settings):
+        """Uploads settings to gaia machine.
+
+        Args:
+            settings: The settings to send to the gaia machine.
+
+        """
+
+        requests.post(self.address + '/api/settings', json=settings)
 
     def upload_wave_file(self, file_name):
         """Uploads a wave file to gaia machine to be played later.
