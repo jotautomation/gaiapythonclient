@@ -18,10 +18,11 @@ class Client:
         machine_state_callback=None,
         reconnect_ws=True,
         reconnect_ws_delay=10,
+        ws_ping_pong=False
     ):
         self.reconnect_ws = reconnect_ws
         self.reconnect_ws_delay = reconnect_ws_delay
-        self.ws_kwargs = {"ping_interval": 30, "ping_timeout": 10}
+        self.ws_kwargs = {"ping_interval": 5, "ping_timeout": 1} if ws_ping_pong else {}
 
         def prependurl(url):
             return url if "://" in url else "http://" + url
